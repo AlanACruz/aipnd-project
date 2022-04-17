@@ -42,8 +42,8 @@ parser.add_argument('input',
 
 parser.add_argument('checkpoint',
                     action='store',
-                    default="save_dir/checkpoint.pth",
-                    help='checkpoint file, default should be <save_dir/checkpoint.pth>')
+                    default="save_dir",
+                    help='checkpoint file, default should be <save_dir>')
 
 parser.add_argument('--topk', 
                     action='store',
@@ -73,10 +73,8 @@ print('gpu            = {!r}'.format(cli_args.gpu))
 
 # TODO: Write a function that loads a checkpoint and rebuilds the model
 def load_checkpoint(filepath):
-
-    path = 'checkpoint.pth'
     
-    state = torch.load(path)
+    state = torch.load(os.getenv('HOME')+"/opt/"+cli_args.save_dir+"/checkpoint.pth")
     
     print(config_dictionary)
 
@@ -84,7 +82,7 @@ def load_checkpoint(filepath):
     optimizer.state_dict = config_dictionary["optimizer_state"]
 
 ##### Commented Out to keep workspace size down #####
-load_checkpoint(cli_args.checkpoint)
+load_checkpoint(os.getenv('HOME')+"/"+cli_args.checkpoint)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)

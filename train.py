@@ -44,9 +44,9 @@ parser.add_argument('data_dir',
 
 parser.add_argument('--save_dir',
                     action='store',
-                    default="~/opt",
+                    default="save_dir",
                     dest='save_dir',
-                    help='Set directory to save checkpoints, default should be <~/opt>')
+                    help='Set directory to save checkpoints, default should be <save_dir>')
 
 parser.add_argument('--arch', 
                     action='store',
@@ -283,6 +283,6 @@ config_dictionary = {
   'epochs': cli_args.epochs
 }
 
-os.mkdir(cli_args.save_dir)
+os.mkdir(os.getenv('HOME')+"/opt/"+cli_args.save_dir)
 
-torch.save(config_dictionary, cli_args.save_dir+"/checkpoint.pth")
+torch.save(config_dictionary, os.getenv('HOME')+"/opt/"+cli_args.save_dir+"/checkpoint.pth")
