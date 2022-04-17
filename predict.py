@@ -48,7 +48,7 @@ parser.add_argument('checkpoint',
 parser.add_argument('--topk', 
                     action='store',
                     default=5,
-                    dest="gpu",
+                    dest="topk",
                     help='Use GPU for inference')
 
 parser.add_argument('--category_names',
@@ -74,15 +74,16 @@ print('gpu            = {!r}'.format(cli_args.gpu))
 # TODO: Write a function that loads a checkpoint and rebuilds the model
 def load_checkpoint(filepath):
     
-    state = torch.load(os.getenv('HOME')+"/opt/"+cli_args.save_dir+"/checkpoint.pth")
+    config_dictionary = torch.load(filepath)
     
     print(config_dictionary)
 
     model = config_dictionary["model"]
     optimizer.state_dict = config_dictionary["optimizer_state"]
+    epochs = config_dictionary["epochs"]
 
 ##### Commented Out to keep workspace size down #####
-load_checkpoint(os.getenv('HOME')+"/"+cli_args.checkpoint)
+load_checkpoint(cli_args.checkpoint+"/checkpoint.pth")
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
@@ -182,5 +183,5 @@ for x in range (0, cli_args.topk):
 
 print("Top k = "+cli_args.topk)
 
-for x in range (0, cli_args.topk)
+for x in range (0, cli_args.topk):
     print(np_names[x]+": "+probs[x])

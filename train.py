@@ -283,6 +283,6 @@ config_dictionary = {
   'epochs': cli_args.epochs
 }
 
-os.mkdir(os.getenv('HOME')+"/opt/"+cli_args.save_dir)
+os.mkdir(cli_args.save_dir)
 
-torch.save(config_dictionary, os.getenv('HOME')+"/opt/"+cli_args.save_dir+"/checkpoint.pth")
+torch.save(config_dictionary, cli_args.save_dir+"/checkpoint.pth")
