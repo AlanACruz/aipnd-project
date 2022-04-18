@@ -134,6 +134,8 @@ test_dataloader = torch.utils.data.DataLoader(
     shuffle=True
 )
 
+categories_to_name = {}
+
 with open('cat_to_name.json', 'r') as f:
     categories_to_name = json.load(f)
     num_of_categories = len(categories_to_name)
@@ -143,12 +145,11 @@ with open('cat_to_name.json', 'r') as f:
 # load a pre trained model
 # vgg variants classifiers have 25088
 # as input_features of 1st FC layer
-if cli_args.arch == "resnet18":
-    model = models.resnet18(pretrained=True)
-elif cli_args.arch == "alexnet":
-    model = models.alexnet(pretrained=True)
-else:
+if cli_args.arch == "vgg16":
     model = models.vgg16(pretrained=True)
+else:
+    print(cli_args.arch+" not yet implemented")
+    quit()
     
 print(model)
 
@@ -278,11 +279,14 @@ print("Done Testing")
 model.class_to_idx = train_datasets.class_to_idx
 
 config_dictionary = {
-  'model': model,
+  'model_state': model.state_dict(),
   'optimizer_state': optimizer.state_dict,
-  'epochs': cli_args.epochs
+  'learning_rate': cli_args.learning_rate,
+  'epochs': cli_args.epochs,
+  'class_to_idx': train_datasets.class_to_idx
 }
 
-os.mkdir(cli_args.save_dir)
+if not os.path.exists(cli_args.save_dir):
+    os.mkdir(cli_args.save_dir)
 
 torch.save(config_dictionary, cli_args.save_dir+"/checkpoint.pth")

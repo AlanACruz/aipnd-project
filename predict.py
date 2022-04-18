@@ -58,7 +58,7 @@ parser.add_argument('--category_names',
                     help='Mapping of categories to real names')
 
 parser.add_argument('--gpu', 
-                    action='store',
+                    action='store_true',
                     default=False,
                     dest="gpu",
                     help='Use GPU for inference')
@@ -71,25 +71,64 @@ print('top k          = {!r}'.format(cli_args.topk))
 print('category_names = {!r}'.format(cli_args.category_names))
 print('gpu            = {!r}'.format(cli_args.gpu))
 
+model = models.vgg16(pretrained=True)
+optimizer = {}
+epochs = 0
+
+categories_to_name = {}
+
+transform = transforms.Compose(
+    [
+        transforms.Resize(224),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            [0.485, 0.456, 0.406],                            
+            [0.229, 0.224, 0.225]
+        )
+    ]
+)
+
+with open('cat_to_name.json', 'r') as f:
+    categories_to_name = json.load(f)
+    num_of_categories = len(categories_to_name)
+    print("Number of Categories: ", num_of_categories)
+    print(json.dumps(categories_to_name, sort_keys=True, indent=4))
+    
+
 # TODO: Write a function that loads a checkpoint and rebuilds the model
 def load_checkpoint(filepath):
     
     config_dictionary = torch.load(filepath)
     
     print(config_dictionary)
-
-    model = config_dictionary["model"]
-    optimizer.state_dict = config_dictionary["optimizer_state"]
+    
+    model.state_dict = config_dictionary["model_state"]
+    model.eval()
+    
+    optimizer_state = config_dictionary["optimizer_state"]
+    learning_rate = config_dictionary["learning_rate"]
+    
+    optimizer = optim.Adam(model.classifier.parameters(), lr=learning_rate)
+    
+    # optimizer.state_dict = config_dictionary["optimizer_state"]
     epochs = config_dictionary["epochs"]
 
+    model.class_to_idx = config_dictionary['class_to_idx'] 
+   
 ##### Commented Out to keep workspace size down #####
 load_checkpoint(cli_args.checkpoint+"/checkpoint.pth")
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-model = model.to(device)
+device = "cpu"
+
+if cli_args.gpu == True:
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 print(model)
 print(optimizer)
+print(epochs)
+    
+model = model.to(device)
 
 def process_image(image):
     ''' Scales, crops, and normalizes a PIL image for a PyTorch model,
@@ -106,28 +145,6 @@ def process_image(image):
     np_im.transpose((2, 0, 1))
     
     return p_im, np_im
-
-
-def imshow(image, ax=None, title=None):
-    """Imshow for Tensor."""
-    if ax is None:
-        fig, ax = plt.subplots()
-    
-    # PyTorch tensors assume the color channel is the first dimension
-    # but matplotlib assumes is the third dimension
-    image = image.numpy().transpose((1, 2, 0))
-    
-    # Undo preprocessing
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    image = std * image + mean
-    
-    # Image needs to be clipped between 0 and 1 or it looks like noise when displayed
-    image = np.clip(image, 0, 1)
-    
-    ax.imshow(image)
-    
-    return ax
 
 
 def predict(image_path, model, topk=cli_args.topk):
@@ -161,27 +178,24 @@ def predict(image_path, model, topk=cli_args.topk):
 
 im = Image.open(cli_args.input)
     
-plt.imshow(im)
-plt.show()
-    
-probs, classes = predict(img_path, model)
+probs, classes = predict(cli_args.input, model)
 
 np_class = classes.cpu().detach().numpy()
+print(np_class)
+
 classes = np_class.tolist()[0]
+print(classes)
 
 np_probs = probs.cpu().detach().numpy()
 probs = np_probs.tolist()[0]
     
-np_names = np.array([])
 
 y = []
-    
+
+print(str('Top k = ')+str(cli_args.topk))
+
 for x in range (0, cli_args.topk):
     y = int(np_class[0,x])
-    name = [ categories_to_name.get(str(y)) ]
-    np_names = np.append(np_names, name)
+    name = categories_to_name[str(y)]
 
-print("Top k = "+cli_args.topk)
-
-for x in range (0, cli_args.topk):
-    print(np_names[x]+": "+probs[x])
+    print(str(name)+": "+str(probs[x]))
